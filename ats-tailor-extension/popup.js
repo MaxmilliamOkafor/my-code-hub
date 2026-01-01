@@ -431,33 +431,140 @@ class ATSTailor {
       coverSize.textContent = `${sizeKB} KB`;
     }
     
-    // Update ATS match score
-    const atsScore = document.getElementById('atsMatchScore');
-    const atsSection = document.getElementById('atsMatchSection');
-    const atsKeywords = document.getElementById('atsKeywords');
-    const matchedKeywords = document.getElementById('matchedKeywords');
-    const missingKeywords = document.getElementById('missingKeywords');
+    // Update AI Match Analysis - Simplify Style
+    this.updateMatchAnalysis();
+  }
+
+  updateMatchAnalysis() {
+    const score = this.generatedDocuments.matchScore || 0;
+    const matched = this.generatedDocuments.matchedKeywords || [];
+    const missing = this.generatedDocuments.missingKeywords || [];
+    const total = matched.length + missing.length;
     
-    if (atsScore && this.generatedDocuments.matchScore) {
-      atsScore.textContent = `${this.generatedDocuments.matchScore}%`;
-      atsSection?.classList.remove('hidden');
-      
-      // Show keywords
-      if (atsKeywords && (this.generatedDocuments.matchedKeywords?.length || this.generatedDocuments.missingKeywords?.length)) {
-        atsKeywords.classList.remove('hidden');
-        
-        if (matchedKeywords && this.generatedDocuments.matchedKeywords?.length) {
-          matchedKeywords.textContent = `✓ ${this.generatedDocuments.matchedKeywords.slice(0, 8).join(', ')}`;
-        }
-        
-        if (missingKeywords && this.generatedDocuments.missingKeywords?.length) {
-          missingKeywords.textContent = `⚠ Missing: ${this.generatedDocuments.missingKeywords.slice(0, 5).join(', ')}`;
-        }
+    // Update donut chart
+    const donutSegment = document.getElementById('donutSegment');
+    const donutPercentage = document.getElementById('donutPercentage');
+    
+    if (donutSegment) {
+      donutSegment.setAttribute('stroke-dasharray', `${score}, 100`);
+      // Set color class based on score
+      donutSegment.className = 'donut-segment';
+      if (score < 40) donutSegment.classList.add('score-low');
+      else if (score < 70) donutSegment.classList.add('score-medium');
+      else if (score < 90) donutSegment.classList.add('score-good');
+      else donutSegment.classList.add('score-excellent');
+    }
+    
+    if (donutPercentage) {
+      donutPercentage.textContent = `${score}%`;
+    }
+    
+    // Update match title and description
+    const matchTitle = document.getElementById('matchTitle');
+    const matchDescription = document.getElementById('matchDescription');
+    const keywordsCountBadge = document.getElementById('keywordsCountBadge');
+    
+    if (matchTitle) {
+      if (score >= 95) matchTitle.textContent = 'Keyword Match - Excellent';
+      else if (score >= 80) matchTitle.textContent = 'Keyword Match - Good';
+      else if (score >= 60) matchTitle.textContent = 'Keyword Match - Fair';
+      else matchTitle.textContent = 'Profile Match';
+    }
+    
+    if (matchDescription) {
+      if (score >= 95) {
+        matchDescription.textContent = `Your resume has ${matched.length} out of ${total} (${score}%) keywords that appear in the job description.`;
+      } else if (score >= 70) {
+        matchDescription.textContent = `Good match! Add more relevant skills to improve your fit.`;
+      } else if (score > 0) {
+        matchDescription.textContent = `Your profile doesn't align well with this job yet. Add relevant skills or experience to improve your fit.`;
+      } else {
+        matchDescription.textContent = `Click "Tailor" to analyze your match score`;
       }
+    }
+    
+    if (keywordsCountBadge) {
+      keywordsCountBadge.textContent = `${matched.length} of ${total} keywords matched`;
+    }
+    
+    // Update keyword badges
+    const keywordBadges = document.getElementById('keywordBadges');
+    if (keywordBadges) {
+      keywordBadges.innerHTML = '';
+      
+      // Add matched keywords (filled badges)
+      matched.slice(0, 6).forEach(kw => {
+        const badge = document.createElement('span');
+        badge.className = 'keyword-badge matched';
+        badge.textContent = kw;
+        keywordBadges.appendChild(badge);
+      });
+      
+      // Add missing keywords (outlined badges)
+      missing.slice(0, 8).forEach(kw => {
+        const badge = document.createElement('span');
+        badge.className = 'keyword-badge missing';
+        badge.textContent = kw;
+        keywordBadges.appendChild(badge);
+      });
+    }
+    
+    // Separate into high and low priority (first 60% high, rest low)
+    const highPriorityMatched = matched.slice(0, Math.ceil(matched.length * 0.6));
+    const highPriorityMissing = missing.slice(0, Math.ceil(missing.length * 0.4));
+    const lowPriorityMatched = matched.slice(Math.ceil(matched.length * 0.6));
+    const lowPriorityMissing = missing.slice(Math.ceil(missing.length * 0.4));
+    
+    const allHighPriority = [...highPriorityMatched.map(k => ({keyword: k, matched: true})), ...highPriorityMissing.map(k => ({keyword: k, matched: false}))];
+    const allLowPriority = [...lowPriorityMatched.map(k => ({keyword: k, matched: true})), ...lowPriorityMissing.map(k => ({keyword: k, matched: false}))];
+    
+    // Update high priority section
+    const highPriorityKeywords = document.getElementById('highPriorityKeywords');
+    const highPriorityCount = document.getElementById('highPriorityCount');
+    
+    if (highPriorityKeywords) {
+      highPriorityKeywords.innerHTML = '';
+      const highMatched = allHighPriority.filter(k => k.matched).length;
+      
+      if (highPriorityCount) {
+        highPriorityCount.textContent = `${highMatched}/${allHighPriority.length}`;
+      }
+      
+      allHighPriority.slice(0, 12).forEach(item => {
+        const div = document.createElement('div');
+        div.className = `priority-keyword-item ${item.matched ? 'matched' : 'missing'}`;
+        div.innerHTML = `
+          <span class="check-icon">${item.matched ? '✓' : ''}</span>
+          <span>${item.keyword}</span>
+        `;
+        highPriorityKeywords.appendChild(div);
+      });
+    }
+    
+    // Update low priority section
+    const lowPriorityKeywords = document.getElementById('lowPriorityKeywords');
+    const lowPriorityCount = document.getElementById('lowPriorityCount');
+    
+    if (lowPriorityKeywords) {
+      lowPriorityKeywords.innerHTML = '';
+      const lowMatched = allLowPriority.filter(k => k.matched).length;
+      
+      if (lowPriorityCount) {
+        lowPriorityCount.textContent = `${lowMatched}/${allLowPriority.length}`;
+      }
+      
+      allLowPriority.slice(0, 8).forEach(item => {
+        const div = document.createElement('div');
+        div.className = `priority-keyword-item ${item.matched ? 'matched' : 'missing'}`;
+        div.innerHTML = `
+          <span class="check-icon">${item.matched ? '✓' : ''}</span>
+          <span>${item.keyword}</span>
+        `;
+        lowPriorityKeywords.appendChild(div);
+      });
     }
   }
 
-  setStatus(text, type = 'ready') {
     const indicator = document.getElementById('statusIndicator');
     const statusText = indicator?.querySelector('.status-text');
     

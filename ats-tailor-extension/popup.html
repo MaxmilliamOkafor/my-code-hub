@@ -86,15 +86,68 @@
 
       <!-- Generated Documents -->
       <div class="documents-card hidden" id="documentsCard">
-        <!-- ATS Match Score -->
-        <div class="ats-match-section" id="atsMatchSection">
-          <div class="ats-match-header">
-            <span class="ats-label">ATS Match</span>
-            <span class="ats-score" id="atsMatchScore">0%</span>
+        <!-- AI Match Analysis - Simplify Style -->
+        <div class="ai-match-analysis" id="aiMatchAnalysis">
+          <div class="analysis-header">
+            <div class="analysis-title">
+              <span class="analysis-icon">🔍</span>
+              <div>
+                <h4>AI Match Analysis</h4>
+                <span class="powered-by">Powered by ATS Tailor</span>
+              </div>
+            </div>
           </div>
-          <div class="ats-keywords hidden" id="atsKeywords">
-            <div class="keywords-matched" id="matchedKeywords"></div>
-            <div class="keywords-missing" id="missingKeywords"></div>
+          
+          <!-- Profile Match with Donut Chart -->
+          <div class="profile-match-section">
+            <div class="donut-chart-container">
+              <svg class="donut-chart" viewBox="0 0 36 36">
+                <path class="donut-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="donut-segment" id="donutSegment" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="20.5" class="donut-percentage" id="donutPercentage">0%</text>
+              </svg>
+            </div>
+            <div class="profile-match-info">
+              <h5 id="matchTitle">Profile Match</h5>
+              <p id="matchDescription">Click "Tailor" to analyze your match score</p>
+              <div class="keywords-count-badge" id="keywordsCountBadge">0 of 0 keywords matched</div>
+            </div>
+          </div>
+
+          <!-- Keyword Match Section -->
+          <div class="keyword-match-section">
+            <div class="keyword-section-header">
+              <span class="keyword-dot"></span>
+              <span>Keyword Match</span>
+            </div>
+            <p class="keyword-hint">See which job keywords match your profile and what's missing to boost your fit.</p>
+            <div class="keyword-badges-container" id="keywordBadges">
+              <!-- Badges will be inserted here -->
+            </div>
+          </div>
+
+          <!-- High Priority Keywords -->
+          <div class="priority-keywords-section" id="highPrioritySection">
+            <div class="priority-header">
+              <span>High Priority Keywords</span>
+              <span class="priority-help">?</span>
+              <span class="priority-count" id="highPriorityCount">0/0</span>
+            </div>
+            <div class="priority-keywords-grid" id="highPriorityKeywords">
+              <!-- Keywords will be inserted here -->
+            </div>
+          </div>
+
+          <!-- Low Priority Keywords -->
+          <div class="priority-keywords-section" id="lowPrioritySection">
+            <div class="priority-header">
+              <span>Low Priority Keywords</span>
+              <span class="priority-help">?</span>
+              <span class="priority-count" id="lowPriorityCount">0/0</span>
+            </div>
+            <div class="priority-keywords-grid" id="lowPriorityKeywords">
+              <!-- Keywords will be inserted here -->
+            </div>
           </div>
         </div>
 
