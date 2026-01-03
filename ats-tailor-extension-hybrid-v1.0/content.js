@@ -61,9 +61,9 @@
     }
   }
 
-  // ============ STATUS BANNER ============
+  // ============ STATUS BANNER (PERSISTENT - ONLY CLOSES VIA X BUTTON) ============
   function createStatusBanner() {
-    if (document.getElementById('ats-auto-banner')) return;
+    if (document.getElementById('ats-auto-banner')) return document.getElementById('ats-auto-banner');
     
     const banner = document.createElement('div');
     banner.id = 'ats-auto-banner';
@@ -76,41 +76,105 @@
           right: 0;
           z-index: 999999;
           background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
-          padding: 12px 20px;
+          padding: 12px 50px 12px 20px;
           font: bold 14px system-ui, sans-serif;
           color: #000;
           text-align: center;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
           animation: ats-pulse 2s ease-in-out infinite;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
         }
         @keyframes ats-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.85; }
         }
-        #ats-auto-banner .ats-status { margin-left: 10px; }
-        #ats-auto-banner.success { background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%); }
+        #ats-auto-banner .ats-status { margin-left: 10px; font-weight: 500; }
+        #ats-auto-banner.success { background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%); animation: none; }
         #ats-auto-banner.error { background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: #fff; }
+        #ats-auto-banner.extracting { background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%); color: #fff; }
+        #ats-auto-banner .ats-close-btn {
+          position: absolute;
+          right: 15px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(0,0,0,0.1);
+          border: none;
+          color: inherit;
+          font-size: 20px;
+          font-weight: bold;
+          cursor: pointer;
+          padding: 2px 8px;
+          border-radius: 4px;
+          opacity: 0.7;
+          transition: all 0.2s ease;
+          line-height: 1;
+        }
+        #ats-auto-banner .ats-close-btn:hover { opacity: 1; background: rgba(0,0,0,0.2); }
+        #ats-auto-banner .ats-progress {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-left: 12px;
+          font-size: 12px;
+          opacity: 0.9;
+        }
+        #ats-auto-banner .ats-progress-bar {
+          width: 100px;
+          height: 4px;
+          background: rgba(0,0,0,0.2);
+          border-radius: 2px;
+          overflow: hidden;
+        }
+        #ats-auto-banner .ats-progress-fill {
+          height: 100%;
+          background: #000;
+          border-radius: 2px;
+          transition: width 0.3s ease;
+        }
       </style>
-      <span>🚀 ATS TAILOR HYBRID</span>
+      <span>🚀ATS HYBRID</span>
       <span class="ats-status" id="ats-banner-status">Detecting upload fields...</span>
+      <span class="ats-progress">
+        <span class="ats-progress-bar"><span class="ats-progress-fill" id="ats-progress-fill" style="width: 0%"></span></span>
+        <span id="ats-progress-text">0%</span>
+      </span>
+      <button class="ats-close-btn" title="Close banner">×</button>
     `;
+    
+    // ONLY CLOSES VIA X BUTTON - NO AUTO-HIDE
+    banner.querySelector('.ats-close-btn').addEventListener('click', () => {
+      banner.remove();
+    });
+    
     document.body.appendChild(banner);
+    return banner;
   }
 
-  function updateBanner(status, type = 'working') {
-    const banner = document.getElementById('ats-auto-banner');
+  function updateBanner(status, type = 'working', progress = null) {
+    const banner = document.getElementById('ats-auto-banner') || createStatusBanner();
     const statusEl = document.getElementById('ats-banner-status');
     if (banner) {
-      banner.className = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
+      banner.className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'extracting' ? 'extracting' : '';
     }
     if (statusEl) statusEl.textContent = status;
+    
+    // Update progress bar if provided
+    if (progress !== null) {
+      const fill = document.getElementById('ats-progress-fill');
+      const text = document.getElementById('ats-progress-text');
+      if (fill) fill.style.width = `${progress}%`;
+      if (text) text.textContent = `${progress}%`;
+    }
   }
 
+  // PERSISTENT BANNER - Does NOT auto-hide. Only closes via X button.
   function hideBanner() {
-    const banner = document.getElementById('ats-auto-banner');
-    if (banner) {
-      setTimeout(() => banner.remove(), 5000);
-    }
+    // NO-OP: Banner is persistent and only closes via close button
+    // Left here for backwards compatibility with existing code calls
+    console.log('[ATS Tailor] Banner is persistent - use X button to close');
   }
 
   // ============ PDF FILE CREATION ============
