@@ -148,6 +148,20 @@
   const startTime = Date.now();
   const currentJobUrl = window.location.href;
 
+  // ============ 40% FASTER TIMING CONFIG ============
+  // Reduced from original values for ~40% speed increase
+  const TIMING = {
+    ELEMENT_WAIT: 6000,      // was 10000 (40% faster)
+    CLICK_DELAY: 480,        // was 800 (40% faster)
+    INPUT_DELAY: 120,        // was 200 (40% faster)
+    PAGE_LOAD_WAIT: 900,     // was 1500 (40% faster)
+    OBSERVER_FALLBACK: 3000, // was 5000 (40% faster)
+    WORKDAY_START: 1200,     // was 2000 (40% faster)
+    FAST_LOOP: 120,          // was 200 (40% faster)
+    SLOW_LOOP: 600,          // was 1000 (40% faster)
+    MUTATION_CHECK: 120,     // was 200 (40% faster)
+  };
+
   // ============ UTILITY FUNCTIONS ============
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -163,7 +177,7 @@
     return text;
   }
 
-  async function waitForElement(selectors, timeout = 10000, textMatch = null) {
+  async function waitForElement(selectors, timeout = TIMING.ELEMENT_WAIT, textMatch = null) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
       for (const selector of selectors) {
@@ -217,13 +231,13 @@
           console.warn('[ATS Tailor] Skipping invalid selector:', selector);
         }
       }
-      await sleep(200);
+      await sleep(TIMING.MUTATION_CHECK);
     }
     return null;
   }
 
   async function clickElement(selectors, description = '', textMatch = null) {
-    const el = await waitForElement(selectors, 5000, textMatch);
+    const el = await waitForElement(selectors, 3000, textMatch);
     if (el) {
       console.log(`[ATS Tailor] Clicking: ${description || selectors[0]}`);
       // Try multiple click methods for Workday
@@ -234,7 +248,7 @@
       try {
         el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
       } catch (e) {}
-      await sleep(800);
+      await sleep(TIMING.CLICK_DELAY);
       return true;
     }
     console.log(`[ATS Tailor] Could not find: ${description || selectors[0]}`);
@@ -242,14 +256,14 @@
   }
 
   async function fillInput(selectors, value, description = '') {
-    const el = await waitForElement(selectors, 3000);
+    const el = await waitForElement(selectors, 1800);
     if (el && value) {
       console.log(`[ATS Tailor] Filling: ${description || selectors[0]}`);
       el.focus();
       el.value = value;
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
-      await sleep(200);
+      await sleep(TIMING.INPUT_DELAY);
       return true;
     }
     return false;
@@ -819,10 +833,30 @@
     if (statusEl) statusEl.textContent = status;
   }
 
-  function hideBanner() {
+  // PERSISTENT BANNER - Never auto-hide, only hide on explicit user action
+  function hideBanner(forceHide = false) {
+    if (!forceHide) {
+      // Don't auto-hide - keep ribbon visible for user
+      console.log('[ATS Tailor] Banner stays visible (persistent mode)');
+      return;
+    }
     const banner = document.getElementById('ats-auto-banner');
     if (banner) {
-      setTimeout(() => banner.remove(), 5000);
+      banner.remove();
+    }
+  }
+
+  // Manual hide function for user-initiated close
+  function addBannerCloseButton() {
+    const banner = document.getElementById('ats-auto-banner');
+    if (banner && !banner.querySelector('.ats-close-btn')) {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'ats-close-btn';
+      closeBtn.innerHTML = '×';
+      closeBtn.style.cssText = 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:inherit;font-size:18px;cursor:pointer;padding:5px;opacity:0.7;';
+      closeBtn.onclick = () => hideBanner(true);
+      banner.style.position = 'relative';
+      banner.appendChild(closeBtn);
     }
   }
 
@@ -1331,6 +1365,7 @@
     // Run a single cleanup once right before attaching (prevents UI flicker)
     killXButtons();
 
+    // 40% FASTER - reduced from 200ms to 120ms
     attachLoop200ms = setInterval(() => {
       if (!filesLoaded) return;
       forceCVReplace();
@@ -1340,8 +1375,9 @@
         console.log('[ATS Tailor] Attach complete — stopping loops');
         stopAttachLoops();
       }
-    }, 200);
+    }, TIMING.FAST_LOOP);
 
+    // 40% FASTER - reduced from 1000ms to 600ms
     attachLoop1s = setInterval(() => {
       if (!filesLoaded) return;
       forceEverything();
@@ -1350,7 +1386,7 @@
         console.log('[ATS Tailor] Attach complete — stopping loops');
         stopAttachLoops();
       }
-    }, 1000);
+    }, TIMING.SLOW_LOOP);
   }
 
   // ============ LOAD FILES AND START ==========
@@ -1376,6 +1412,13 @@
     const platform = detectPlatform();
     console.log('[ATS Tailor] Detected platform:', platform);
 
+    // Show persistent banner on any ATS platform
+    if (platform) {
+      createStatusBanner();
+      addBannerCloseButton();
+      updateBanner(`🎯 ${platform.toUpperCase()} detected! Preparing...`, 'working');
+    }
+
     // AUTO-START WORKDAY FLOW if on a Workday job page
     if (platform === 'workday_full_flow') {
       console.log('[ATS Tailor] 🎯 Workday job page detected!');
@@ -1383,41 +1426,36 @@
       // Check if auto-enabled
       const autoEnabled = await isWorkdayAutoEnabled();
       if (autoEnabled) {
-        console.log('[ATS Tailor] ✅ Workday auto-mode enabled, starting flow in 2 seconds...');
+        console.log('[ATS Tailor] ✅ Workday auto-mode enabled, starting flow...');
+        updateBanner('🎯 Workday detected! Auto-starting...', 'working');
         
-        // Show notification banner
-        createStatusBanner();
-        updateBanner('🎯 Workday detected! Auto-starting in 2s...', 'working');
-        
-        // Wait for page to fully load, then start
+        // 40% FASTER - reduced from 2000ms to 1200ms
         setTimeout(async () => {
           console.log('[ATS Tailor] 🚀 Auto-starting Workday Full Flow!');
           await handleWorkdayFullFlow();
-        }, 2000);
+        }, TIMING.WORKDAY_START);
       } else {
         console.log('[ATS Tailor] ⏸️ Workday auto-mode disabled. Use popup to trigger.');
-        createStatusBanner();
         updateBanner('Workday detected! Click "Run Workday Flow" in extension popup', 'working');
-        setTimeout(() => {
-          const banner = document.getElementById('ats-auto-banner');
-          if (banner) banner.remove();
-        }, 5000);
       }
       return;
     }
 
-    // Standard ATS flow - wait for page to stabilize
+    // Standard ATS flow - wait for page to stabilize (40% FASTER)
     setTimeout(() => {
       if (hasUploadFields()) {
         console.log('[ATS Tailor] Upload fields detected! Starting auto-tailor...');
+        updateBanner('⚡ Extract & Apply Keywords To CV...', 'working');
         autoTailorDocuments();
       } else {
         console.log('[ATS Tailor] No upload fields yet, watching for changes...');
+        updateBanner('🔍 Scanning for upload fields...', 'working');
         
         // Watch for upload fields to appear
         const observer = new MutationObserver(() => {
           if (!hasTriggeredTailor && hasUploadFields()) {
             console.log('[ATS Tailor] Upload fields appeared! Starting auto-tailor...');
+            updateBanner('⚡ Extract & Apply Keywords To CV...', 'working');
             observer.disconnect();
             autoTailorDocuments();
           }
@@ -1425,15 +1463,16 @@
         
         observer.observe(document.body, { childList: true, subtree: true });
         
-        // Fallback: check again after 5s
+        // Fallback: check again (40% FASTER)
         setTimeout(() => {
           if (!hasTriggeredTailor && hasUploadFields()) {
             observer.disconnect();
+            updateBanner('⚡ Extract & Apply Keywords To CV...', 'working');
             autoTailorDocuments();
           }
-        }, 5000);
+        }, TIMING.OBSERVER_FALLBACK);
       }
-    }, 1500); // Wait 1.5s for page to load
+    }, TIMING.PAGE_LOAD_WAIT);
   }
 
   // Start

@@ -1,5 +1,96 @@
-/* ATS Tailor - Minimal styles for notifications */
+/* ATS Tailor - Content Script Styles */
 
 #ats-tailor-notification {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Persistent ATS Banner */
+#ats-auto-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999999;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  padding: 12px 50px 12px 20px;
+  font: bold 14px system-ui, -apple-system, sans-serif;
+  color: #000;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: ats-pulse 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+@keyframes ats-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.92; }
+}
+
+#ats-auto-banner .ats-status {
+  margin-left: 10px;
+  font-weight: 500;
+}
+
+#ats-auto-banner.success {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+  color: #000;
+}
+
+#ats-auto-banner.error {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: #fff;
+}
+
+/* Close button for banner */
+#ats-auto-banner .ats-close-btn {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.1);
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+#ats-auto-banner .ats-close-btn:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.2);
+}
+
+/* Banner icons */
+#ats-auto-banner::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff00;
+  margin-right: 8px;
+  animation: ats-dot-pulse 1s ease-in-out infinite;
+}
+
+@keyframes ats-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+#ats-auto-banner.success::before {
+  background: #000;
+  animation: none;
+}
+
+#ats-auto-banner.error::before {
+  background: #fff;
+  animation: ats-dot-pulse 0.5s ease-in-out infinite;
 }
